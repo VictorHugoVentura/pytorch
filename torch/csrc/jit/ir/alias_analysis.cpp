@@ -47,6 +47,7 @@ class MutableTypePtrHelper {
       case TypeKind::DictType:
       case TypeKind::ClassType:
       case TypeKind::TensorType:
+      case TypeKind::UnionType:
         // TODO: lookup cached contained types. this is kind of tricky
         // because a List[Optional[T]] should still be
         // List[Optional[Unshaped(T)]], however the getMutableType(Optional[T])
@@ -90,7 +91,8 @@ bool isMutableTypeImpl(
   // getMutableTypePtrImpl
   auto kind = type->kind();
   if (kind == TypeKind::TensorType || kind == TypeKind::ListType ||
-      kind == TypeKind::ClassType || kind == TypeKind::DictType) {
+      kind == TypeKind::ClassType || kind == TypeKind::DictType ||
+      kind == TypeKind::UnionType) {
     return true;
   }
   MutableTypePtrHelper helper(mutable_type_cache);
@@ -1063,8 +1065,8 @@ void AliasDb::makePointerTo(const Value* from, const Value* to) {
     return;
   }
 
-  // the contained types of immutable type containers (optional, tuple, future)
-  // are unified, so these types can be mutable or immutable
+  // the contained types of immutable type containers (optional, tuple,
+  // future) are unified, so these types can be mutable or immutable
   // and point to a type which is mutable or immutable.
   // Any is mutable but can point to an immutable type through refinement
   if (isMutableTypeInternal(from) != isMutableTypeInternal(to)) {
